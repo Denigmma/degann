@@ -12,11 +12,13 @@ __all__ = [
     "hyperbol",
     "const",
     "sig",
+    "multidim",
+    "hardsin",
 ]
 
 from scipy.integrate import solve_ivp
 
-from degann import SystemODE
+from degann.equations import SystemODE
 
 
 def LF_ODE_1_solution(x):
@@ -132,6 +134,9 @@ def ST_S_ODE_3_table(points_array: list, interval: Tuple[float, float] = (0, 40)
     res = res.T
     return res
 
+def hardsin(x):
+    return np.sin(np.log(x**sin(x)))
+
 
 exp = LF_ODE_1_solution
 lin = lambda x: x * 2
@@ -142,3 +147,4 @@ hyperbol = lambda x: (np.float_power(x, 2) + 0.5) / (x + 0.1)
 const = LF_ODE_2_solution
 sig = lambda x: 1 / (1 + np.float_power(np.e, -x))
 multidim = lambda x, y, z: np.sin(5 * x) * np.log2(1 + y) / np.sqrt(1 + z)
+hardsin = hardsin

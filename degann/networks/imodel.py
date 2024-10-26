@@ -9,6 +9,8 @@ from tensorflow import keras
 from degann.networks.config_format import HEADER_OF_APG_FILE
 from degann.networks.topology.tf_densenet import TensorflowDenseNet
 
+from degann.networks.topology.tf_RNN_GRU import TensorflowGRUNet  # подключим GRUNet
+
 
 def _get_act_and_init(
     kwargs: dict,
@@ -51,8 +53,10 @@ class IModel(object):
     def __init__(
         self,
         input_size: int,
-        block_size: List[int],
         output_size: int,
+        block_size: List[int] = None,  # добавим default значение None
+        count_size: int = None,  # count_size для GRU сетей
+        gru_units: int = None,  # Добавляем gru_units для GRU сетей
         activation_func="sigmoid",
         weight_init=tf.random_uniform_initializer(minval=-1, maxval=1),
         bias_init=tf.random_uniform_initializer(minval=-1, maxval=1),
@@ -61,16 +65,39 @@ class IModel(object):
         is_debug=False,
         **kwargs,
     ):
-        self.network = _create_functions[net_type](
-            input_size,
-            block_size,
-            activation_func=activation_func,
-            weight=weight_init,
-            biases=bias_init,
-            output_size=output_size,
-            is_debug=is_debug,
-            **kwargs,
-        )
+
+        # проверка типа сети
+        if net_type == "GRUNet":
+            if count_size is None:
+                raise ValueError("Для GRU сетей необходимо передать параметр count_size")
+            # Для GRU используем count_size вместо block_size
+            block_size = [kwargs.get("gru_units", 50)] * count_size  # Все слои имеют одинаковое количество юнитов
+        elif block_size is None:
+            raise ValueError("Для сетей, отличных от GRU, необходимо передать block_size")
+
+        if net_type == "GRUNet":
+            self.network = _create_functions[net_type](
+                input_size,
+                count_size=count_size,  # Передаем count_size для GRU
+                gru_units=gru_units,  # Передаем количество GRU юнитов
+                activation_func=activation_func,
+                weight=weight_init,
+                biases=bias_init,
+                output_size=output_size,
+                is_debug=is_debug,
+                **kwargs,
+            )
+        else:
+            self.network = _create_functions[net_type](
+                input_size,
+                block_size,
+                activation_func=activation_func,
+                weight=weight_init,
+                biases=bias_init,
+                output_size=output_size,
+                is_debug=is_debug,
+                **kwargs,
+            )
         self._input_size = input_size
         self._output_size = output_size
         self._shape = block_size
@@ -511,3 +538,4 @@ class IModel(object):
 
 _create_functions = defaultdict(lambda: TensorflowDenseNet)
 _create_functions["DenseNet"] = TensorflowDenseNet
+_create_functions["GRUNet"] = TensorflowGRUNet
