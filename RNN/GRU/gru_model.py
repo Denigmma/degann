@@ -6,6 +6,7 @@ import pandas as pd
 import time
 import matplotlib.pyplot as plt
 
+
 base_dir = os.path.dirname(__file__)
 
 # name_dataset="gauss_400_train.csv"
@@ -13,16 +14,18 @@ base_dir = os.path.dirname(__file__)
 # name_dataset="exp_400_train.csv"
 # name_dataset="lin_400_train.csv"
 # name_dataset="ode_train_1000.csv"
-name_dataset="hardsin_1000_train.csv"
+# name_dataset="hardsin_1000_train.csv"
 
 # name_validate="ode_validate_1000.csv"
 # name_validate="gauss_400_validate.csv"
-name_validate="hardsin_1000_validate.csv"
+# name_validate="hardsin_1000_validate.csv"
 # name_validate="exp_400_validate.csv"
 
+# name_dataset="hardsin_500"
+name_dataset="sin_500"
 
-csv_path = os.path.join(base_dir, "../../experiments/data/"+name_dataset)
-val_csv_path = os.path.join(base_dir, "../../experiments/data/"+name_validate)
+csv_path = os.path.join(base_dir, "../../experiments/data/"+name_dataset+"_train.csv")
+val_csv_path = os.path.join(base_dir, "../../experiments/data/"+name_dataset+"_validate.csv")
 
 
 val_data = pd.read_csv(val_csv_path, names=["x", "y"])
@@ -51,19 +54,49 @@ train_data_x, train_data_y = create_sequences(train_data_x, train_data_y, time_s
 
 val_data_x, val_data_y = create_sequences(val_data_x, val_data_y, time_steps)
 
-# tracking time for epochs
-class TimeHistory(tf.keras.callbacks.Callback):
+class TrainingHistory(tf.keras.callbacks.Callback):
     def __init__(self):
-        super(TimeHistory, self).__init__()
+        super(TrainingHistory, self).__init__()
         self.times = []
+        self.losses = []
+        self.val_losses = []
+        self.best_val_loss = float("inf")
+        self.save_best_model_path = "best_gru_model"
+        # self.patience = 50  # param for Early Stopping
+        # self.wait = 0  # count epochs whithout improvement
 
     def on_epoch_begin(self, epoch, logs=None):
         self.start_time = time.time()
 
     def on_epoch_end(self, epoch, logs=None):
+        # Time spent on the current epoch
         elapsed_time = time.time() - self.start_time
         self.times.append(elapsed_time)
-        print(f"Epoch {epoch + 1} finished in {elapsed_time:.2f} seconds")
+
+        # Losses for the actual epochs
+        loss = logs.get('loss')
+        val_loss = logs.get('val_loss')
+        self.losses.append(loss)
+        self.val_losses.append(val_loss)
+        print(f"Epoch {epoch + 1} finished in {elapsed_time:.2f} seconds - "
+              f"Training Loss: {loss:.4f}, Validation Loss: {val_loss:.4f}")
+
+        # finding the best result (val_loss)
+        if val_loss < self.best_val_loss:
+            self.best_val_loss = val_loss
+            # self.wait = 0
+            self.model.save(self.save_best_model_path+".h5")
+            gru_model.export_to_file(self.save_best_model_path)
+            print(f"New best model saved with Validation Loss: {val_loss:.4f}")
+
+        # else:
+        #     self.wait += 1
+        #     print(f"No improvement in Validation Loss for {self.wait}/{self.patience} epochs.")
+        #
+        # # Early Stopping
+        # if self.wait >= self.patience:
+        #     print("Early stopping triggered.")
+        #     self.model.stop_training = True
 
     def get_average_time(self):
         return np.mean(self.times) if self.times else 0
@@ -72,54 +105,42 @@ class TimeHistory(tf.keras.callbacks.Callback):
         return np.sum(self.times) if self.times else 0
 
 
-# tracking loss functions
-class LossHistory(tf.keras.callbacks.Callback):
-    def __init__(self):
-        super(LossHistory, self).__init__()
-        self.losses = []
-        self.val_losses = []
-
-    def on_epoch_end(self, epoch, logs=None):
-        self.losses.append(logs.get('loss'))
-        self.val_losses.append(logs.get('val_loss'))
-
-
-
-
 gru_model = IModel(
     input_size=1,
     output_size=1,
     net_type="GRUNet",
-    count_size=20,  # count layers
-    gru_units=200,  # count units in layers
+    count_size=5,  # count layers
+    gru_units=50,  # count units in layers
 )
 
 
 gru_model.compile(
-    # optimizer="Adam",
-    optimizer="SGD",
-    loss_func="MeanSquaredError",
+    optimizer="Adam",
+    # optimizer="SGD",
+    # loss_func="MeanSquaredError",
+    loss_func="RootMeanSquaredError",
     metrics=[]
 )
 
 loss_before_train = gru_model.evaluate(train_data_x, train_data_y, verbose=0)
 val_loss_before_train=gru_model.evaluate(val_data_x, val_data_y, verbose=0)
 
-time_callback = TimeHistory()
-loss_history = LossHistory()
+callback = TrainingHistory()
 
-gru_model.train(train_data_x, train_data_y, validation_data=(val_data_x, val_data_y), epochs=200, verbose=0, callbacks=[time_callback,loss_history])
+
+
+gru_model.train(train_data_x, train_data_y, validation_data=(val_data_x, val_data_y), epochs=50, verbose=0, callbacks=[callback])
 
 loss_after_train = gru_model.evaluate(train_data_x, train_data_y, verbose=0)
 val_loss_after_train = gru_model.evaluate(val_data_x, val_data_y, verbose=0)
 
 
-gru_model.export_to_file("gru_madel")
+gru_model.export_to_file("gru_model")
 
 
 
-average_time = time_callback.get_average_time()
-total_time = time_callback.get_total_time()
+average_time = callback.get_average_time()
+total_time = callback.get_total_time()
 print(f"Total training time: {total_time} seconds")
 print(f"Average time per epoch: {average_time} seconds")
 
@@ -139,8 +160,8 @@ print(f"Difference in validation loss = {val_loss_before_train - val_loss_after_
 
 # Chart loss function
 plt.figure(figsize=(10, 6))
-plt.plot(loss_history.losses, label='Training Loss', color='blue')
-plt.plot(loss_history.val_losses, label='Validation Loss', color='red')
+plt.plot(callback.losses, label='Training Loss', color='blue')
+plt.plot(callback.val_losses, label='Validation Loss', color='red')
 plt.title('Loss Function During Training')
 plt.xlabel('Epochs')
 plt.ylabel('Loss')
