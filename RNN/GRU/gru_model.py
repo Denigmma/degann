@@ -9,20 +9,7 @@ import matplotlib.pyplot as plt
 
 base_dir = os.path.dirname(__file__)
 
-# name_dataset="gauss_400_train.csv"
-# name_dataset="ode_train_400.csv"
-# name_dataset="exp_400_train.csv"
-# name_dataset="lin_400_train.csv"
-# name_dataset="ode_train_1000.csv"
-# name_dataset="hardsin_1000_train.csv"
-
-# name_validate="ode_validate_1000.csv"
-# name_validate="gauss_400_validate.csv"
-# name_validate="hardsin_1000_validate.csv"
-# name_validate="exp_400_validate.csv"
-
-# name_dataset="hardsin_500"
-name_dataset="sin_500"
+name_dataset="hardsin_1000"
 
 csv_path = os.path.join(base_dir, "../../experiments/data/"+name_dataset+"_train.csv")
 val_csv_path = os.path.join(base_dir, "../../experiments/data/"+name_dataset+"_validate.csv")
@@ -49,9 +36,7 @@ def create_sequences(data_x, data_y, time_steps):
 
 # count time steps
 time_steps = 10
-
 train_data_x, train_data_y = create_sequences(train_data_x, train_data_y, time_steps)
-
 val_data_x, val_data_y = create_sequences(val_data_x, val_data_y, time_steps)
 
 class TrainingHistory(tf.keras.callbacks.Callback):
@@ -105,12 +90,15 @@ class TrainingHistory(tf.keras.callbacks.Callback):
         return np.sum(self.times) if self.times else 0
 
 
+count_size=5 # count layers
+gru_units=30 # count units in layers
+shape=[gru_units]*count_size
+
 gru_model = IModel(
     input_size=1,
-    output_size=1,
-    net_type="GRUNet",
-    count_size=5,  # count layers
-    gru_units=50,  # count units in layers
+    output_size = 1,
+    net_type = "GRUNet",
+    block_size=shape,
 )
 
 
@@ -129,7 +117,7 @@ callback = TrainingHistory()
 
 
 
-gru_model.train(train_data_x, train_data_y, validation_data=(val_data_x, val_data_y), epochs=50, verbose=0, callbacks=[callback])
+gru_model.train(train_data_x, train_data_y, validation_data=(val_data_x, val_data_y), epochs=200, verbose=0, callbacks=[callback])
 
 loss_after_train = gru_model.evaluate(train_data_x, train_data_y, verbose=0)
 val_loss_after_train = gru_model.evaluate(val_data_x, val_data_y, verbose=0)

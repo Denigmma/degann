@@ -2,6 +2,7 @@ import tensorflow as tf
 from tensorflow import keras
 from degann.networks import layer_creator, losses, metrics, cpp_utils
 from degann.networks import optimizers
+from typing import List
 import random
 import numpy as np
 
@@ -15,8 +16,7 @@ class TensorflowGRUNet(tf.keras.Model):
     def __init__(
             self,
             input_size: int = 2,
-            count_size: int = None,  # count layers
-            gru_units: int = None,  # count units in layers
+            block_size: List[int] = None,
             output_size: int = 10,
             activation_func: str = "tanh",  # activation function in the GRU of a new layer
             recurrent_activation: str = "sigmoid",  # recurrent state activation function
@@ -30,8 +30,8 @@ class TensorflowGRUNet(tf.keras.Model):
         super(TensorflowGRUNet, self).__init__(**kwargs)
 
         self.input_size = input_size
-        self.count_size = count_size
-        self.gru_units = gru_units
+        self.count_size = block_size[0]
+        self.gru_units = len(block_size)
         self.output_size = output_size
         self.activation_func = activation_func
         self.recurrent_activation = recurrent_activation
@@ -39,15 +39,15 @@ class TensorflowGRUNet(tf.keras.Model):
 
         self.gru_layers = []  # list GRU layers
 
-        for i in range(count_size):
+        for i in range(len(block_size)):
             if i == 0:
                 # for first layer we must fix input_shape
                 self.gru_layers.append(
                     keras.layers.GRU(
-                        units=gru_units,
+                        units=block_size[0],
                         activation=activation_func,
                         recurrent_activation=recurrent_activation,
-                        return_sequences=True if i < count_size - 1 else return_sequences,
+                        return_sequences=True if i < len(block_size) - 1 else return_sequences,
                         kernel_initializer=weight,
                         bias_initializer=biases,
                         input_shape=(None, input_size),
@@ -57,10 +57,10 @@ class TensorflowGRUNet(tf.keras.Model):
             else:
                 self.gru_layers.append(
                     keras.layers.GRU(
-                        units=gru_units,
+                        units=block_size[0],
                         activation=activation_func,
                         recurrent_activation=recurrent_activation,
-                        return_sequences=True if i < count_size - 1 else return_sequences,
+                        return_sequences=True if i < len(block_size) - 1 else return_sequences,
                         kernel_initializer=weight,
                         bias_initializer=biases,
                         name=f"GRULayer{i}"

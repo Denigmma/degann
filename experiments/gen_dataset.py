@@ -11,18 +11,18 @@ __all__ = ["funcs", "sizes_of_samples", "generate_size"]
 funcs = [
     # (functions.lin, "lin"),
     # (functions.log, "log"),
-    (functions.sin, "sin"),
+    # (functions.sin, "sin"),
     # (functions.exp, "exp"),
     # (functions.gauss, "gauss"),
     # (functions.hyperbol, "hyperbol"),
     # (functions.const, "const"),
     # (functions.sig, "sig"),
     # (functions.multidim, "multidim")
-    # (functions.hardsin,"hardsin")
+    (functions.hardsin,"hardsin"),
 ]
 # sizes_of_samples = [50, 150, 400]
 # sizes_of_samples = [400]
-sizes_of_samples = [500]
+sizes_of_samples = [1000]
 generate_size = 1000
 
 if __name__ == "__main__":
