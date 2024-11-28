@@ -5,6 +5,9 @@ import keras.backend as k
 from keras.callbacks import Callback
 from keras.callbacks import History
 
+import matplotlib.pyplot as plt
+import numpy as np
+
 
 class MemoryCleaner(Callback):
     def on_epoch_end(self, epoch, logs=None):
@@ -98,3 +101,178 @@ class LightHistory(History):
         # Set the history attribute on the model after the epoch ends. This will
         # make sure that the state which is set is the latest one.
         self.model.history = self
+
+
+class Loss_tracking(Callback):
+    """
+    Callback for tracking losses during training.
+
+    This callback collects the training loss and validation loss at the end of each epoch.
+    It appends the loss values to separate lists for further analysis or visualization.
+
+    Attributes:
+        losses (list): Stores the training loss for each epoch.
+        val_losses (list): Stores the validation loss for each epoch.
+    """
+
+    def __init__(self):
+        super(Loss_tracking, self).__init__()
+        self.losses = []
+        self.val_losses = []
+
+    def on_epoch_end(self, epoch, logs=None):
+        loss = logs.get('loss')
+        val_loss = logs.get('val_loss')
+        if loss is not None:
+            self.losses.append(loss)
+        if val_loss is not None:
+            self.val_losses.append(val_loss)
+
+
+class Early_stopping(Callback):
+    """
+       Callback for early stopping during training.
+
+       Stops training when validation loss does not improve for a specified number of consecutive epochs (=patience).
+
+       Attributes:
+           best_val_loss (float): Tracks the best validation loss observed during training.
+           patience (int): Number of epochs to wait for an improvement in validation loss before stopping.
+           wait (int): Counter for tracking consecutive epochs without improvement.
+       """
+
+    def __init__(self,patience):
+        super(Early_stopping, self).__init__()
+        self.best_val_loss = float("inf")
+        self.patience = patience  # param for Early Stopping
+        self.wait = 0
+
+    def check_stop(self, val_loss, logs=None):
+        if val_loss < self.best_val_loss:
+            self.best_val_loss = val_loss
+            self.wait = 0
+        else:
+            self.wait += 1
+            if self.wait >= self.patience:
+                print("//Early stopping triggered after",self.patience,"unsuccessful epoch//")
+                self.model.stop_training = True
+
+    def on_epoch_end(self, epoch, logs=None):
+        val_loss = logs.get('val_loss')
+        if val_loss is not None:
+            self.check_stop(val_loss)
+
+
+class Save_best_model(Callback):
+    """
+        Callback for saving the best model during training.
+
+        Tracks the validation loss at the end of each epoch and saves the model
+        if the validation loss improves.
+
+        Attributes:
+            best_val_loss (float): Tracks the best validation loss observed during training.
+            save_best_model_path (str): Path where the best model is saved.
+            model_save: An instance of the model that supports an export_to_file method for saving.
+        """
+
+    def __init__(self,model_save):
+        super(Save_best_model, self).__init__()
+        self.best_val_loss = float("inf")
+        self.save_best_model_path = "best_GRU_IModel"
+        self.model_save = model_save
+
+    def check_save(self, val_loss, logs=None):
+        if val_loss < self.best_val_loss:
+            self.best_val_loss = val_loss
+            self.model.save(self.save_best_model_path+".h5")
+            self.model_save.export_to_file(self.save_best_model_path)
+
+    def on_epoch_end(self, epoch, logs=None):
+        val_loss = logs.get('val_loss')
+        if val_loss is not None:
+            self.check_save(val_loss)
+
+
+class Visualization(Callback):
+    """
+    Callback for visualizing training progress and model predictions.
+
+    This callback generates two types of plots:
+    1. Training and validation loss during training.
+    2. Comparison of model predictions, training data, and the true function after training.
+
+    Attributes:
+        train_data_x (np.ndarray): Training input data for prediction visualization.
+        train_data_y (np.ndarray): Training output data for prediction visualization.
+        val_data_x (np.ndarray): Validation input data for loss tracking.
+        val_data_y (np.ndarray): Validation output data for loss tracking.
+        func_name (str): Name of the true function for comparison.
+        funcs (list): List of available functions with their names.
+        losses (list): List of training losses for each epoch.
+        val_losses (list): List of validation losses for each epoch.
+    """
+
+    def __init__(self, train_data_x, train_data_y, val_data_x, val_data_y, func_name, funcs):
+        """
+        Initializes the VisualizationCallback.
+
+        Args:
+            train_data_x (np.ndarray): Training input data.
+            train_data_y (np.ndarray): Training output data.
+            val_data_x (np.ndarray): Validation input data.
+            val_data_y (np.ndarray): Validation output data.
+            func_name (str): Name of the true function.
+            funcs (list): List of available functions with their names.
+        """
+        super(Visualization, self).__init__()
+        self.train_data_x = train_data_x
+        self.train_data_y = train_data_y
+        self.val_data_x = val_data_x
+        self.val_data_y = val_data_y
+        self.func_name = func_name
+        self.funcs = funcs
+        self.losses = []
+        self.val_losses = []
+
+    def on_epoch_end(self, epoch, logs=None):
+        loss = logs.get('loss')
+        val_loss = logs.get('val_loss')
+        if loss is not None:
+            self.losses.append(loss)
+        if val_loss is not None:
+            self.val_losses.append(val_loss)
+
+    def on_train_end(self, logs=None):
+        plt.figure(figsize=(10, 6))
+        plt.plot(self.losses, label='Training Loss', color='blue')
+        plt.plot(self.val_losses, label='Validation Loss', color='red')
+        plt.title('Loss Function During Training')
+        plt.xlabel('Epochs')
+        plt.ylabel('Loss')
+        plt.legend()
+        plt.grid()
+
+        predictions = self.model.predict(self.train_data_x, verbose=0)
+
+        true_func = None
+        for func, name in self.funcs:
+            if name == self.func_name:
+                true_func = func
+                break
+
+        x_values = self.train_data_x[:, -1, 0]
+        true_solution = true_func(x_values)
+
+        plt.figure(figsize=(10, 6))
+        plt.scatter(x_values, self.train_data_y, label="Training Data", color="blue", alpha=0.5)
+        plt.plot(x_values, predictions, label="Model Prediction", color="red")
+        plt.plot(x_values, true_solution, label="True Function: " + self.func_name, color="green")
+        plt.title("GRU Model: Training Data, Predictions, and True Function")
+        plt.xlabel("x")
+        plt.ylabel("y")
+        plt.legend()
+        plt.grid()
+
+        plt.show()
+        plt.close()
