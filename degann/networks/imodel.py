@@ -9,7 +9,7 @@ from tensorflow import keras
 from degann.networks.config_format import HEADER_OF_APG_FILE
 from degann.networks.topology.tf_densenet import TensorflowDenseNet
 
-from degann.networks.topology.tf_RNN_GRU import TensorflowGRUNet  # подключим GRUNet
+from degann.networks.topology.tf_RNN_GRU_NET import TensorflowGRUNet
 
 
 def _get_act_and_init(
