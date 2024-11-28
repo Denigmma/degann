@@ -27,6 +27,13 @@ class TensorflowGRUNet(tf.keras.Model):
             return_sequences: bool = False,
             **kwargs,
     ):
+        # checking |block_size| for data accuracy
+        if block_size is None or not all(size == block_size[0] for size in block_size):
+            raise ValueError("\n//ERROR//\n"
+                f"All layers in Recurrent Neural Networks must have the same number of neurons in each layer "
+                f"\nReceived block_size: {block_size}"
+            )
+
         super(TensorflowGRUNet, self).__init__(**kwargs)
 
         self.input_size = input_size
@@ -40,32 +47,17 @@ class TensorflowGRUNet(tf.keras.Model):
         self.gru_layers = []  # list GRU layers
 
         for i in range(len(block_size)):
-            if i == 0:
-                # for first layer we must fix input_shape
-                self.gru_layers.append(
-                    keras.layers.GRU(
-                        units=block_size[0],
-                        activation=activation_func,
-                        recurrent_activation=recurrent_activation,
-                        return_sequences=True if i < len(block_size) - 1 else return_sequences,
-                        kernel_initializer=weight,
-                        bias_initializer=biases,
-                        input_shape=(None, input_size),
-                        name=f"GRULayer{i}"
-                    )
+            self.gru_layers.append(
+                keras.layers.GRU(
+                    units=block_size[0],
+                    activation=activation_func,
+                    recurrent_activation=recurrent_activation,
+                    return_sequences=True if i < len(block_size) - 1 else return_sequences,
+                    kernel_initializer=weight,
+                    bias_initializer=biases,
+                    name=f"GRULayer{i}"
                 )
-            else:
-                self.gru_layers.append(
-                    keras.layers.GRU(
-                        units=block_size[0],
-                        activation=activation_func,
-                        recurrent_activation=recurrent_activation,
-                        return_sequences=True if i < len(block_size) - 1 else return_sequences,
-                        kernel_initializer=weight,
-                        bias_initializer=biases,
-                        name=f"GRULayer{i}"
-                    )
-                )
+            )
 
             # # Dropout
             # self.gru_layers.append(
