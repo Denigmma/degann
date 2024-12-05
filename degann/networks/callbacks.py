@@ -103,7 +103,7 @@ class LightHistory(History):
         self.model.history = self
 
 
-class Loss_tracking(Callback):
+class LossTracking(Callback):
     """
     Callback for tracking losses during training.
 
@@ -116,7 +116,7 @@ class Loss_tracking(Callback):
     """
 
     def __init__(self):
-        super(Loss_tracking, self).__init__()
+        super(LossTracking, self).__init__()
         self.losses = []
         self.val_losses = []
 
@@ -129,7 +129,7 @@ class Loss_tracking(Callback):
             self.val_losses.append(val_loss)
 
 
-class Early_stopping(Callback):
+class EarlyStopping(Callback):
     """
        Callback for early stopping during training.
 
@@ -142,7 +142,7 @@ class Early_stopping(Callback):
        """
 
     def __init__(self,patience):
-        super(Early_stopping, self).__init__()
+        super(EarlyStopping, self).__init__()
         self.best_val_loss = float("inf")
         self.patience = patience  # param for Early Stopping
         self.wait = 0
@@ -163,7 +163,7 @@ class Early_stopping(Callback):
             self.check_stop(val_loss)
 
 
-class Save_best_model(Callback):
+class SaveBestModel(Callback):
     """
         Callback for saving the best model during training.
 
@@ -177,9 +177,9 @@ class Save_best_model(Callback):
         """
 
     def __init__(self,model_save):
-        super(Save_best_model, self).__init__()
+        super(SaveBestModel, self).__init__()
         self.best_val_loss = float("inf")
-        self.save_best_model_path = "best_GRU_IModel"
+        self.save_best_model_path = "best_Model"
         self.model_save = model_save
 
     def check_save(self, val_loss, logs=None):
@@ -194,7 +194,7 @@ class Save_best_model(Callback):
             self.check_save(val_loss)
 
 
-class Visualization(Callback):
+class VisualizationTS(Callback):
     """
     Callback for visualizing training progress and model predictions.
 
@@ -225,7 +225,7 @@ class Visualization(Callback):
             func_name (str): Name of the true function.
             funcs (list): List of available functions with their names.
         """
-        super(Visualization, self).__init__()
+        super(VisualizationTS, self).__init__()
         self.train_data_x = train_data_x
         self.train_data_y = train_data_y
         self.val_data_x = val_data_x
@@ -276,3 +276,97 @@ class Visualization(Callback):
 
         plt.show()
         plt.close()
+
+class VisualizationDense(Callback):
+    """
+    Callback for visualizing training progress and model predictions.
+
+    This callback generates two types of plots:
+    1. Training and validation loss during training.
+    2. Comparison of model predictions, training data, and the true function after training.
+
+    Attributes:
+        train_data_x (np.ndarray): Training input data for prediction visualization.
+        train_data_y (np.ndarray): Training output data for prediction visualization.
+        val_data_x (np.ndarray): Validation input data for loss tracking.
+        val_data_y (np.ndarray): Validation output data for loss tracking.
+        func_name (str): Name of the true function for comparison.
+        funcs (list): List of available functions with their names.
+        losses (list): List of training losses for each epoch.
+        val_losses (list): List of validation losses for each epoch.
+    """
+
+    def __init__(self, train_data_x, train_data_y, val_data_x, val_data_y, func_name, funcs):
+        """
+        Initializes the VisualizationDense callback.
+
+        Args:
+            train_data_x (np.ndarray): Training input data.
+            train_data_y (np.ndarray): Training output data.
+            val_data_x (np.ndarray): Validation input data.
+            val_data_y (np.ndarray): Validation output data.
+            func_name (str): Name of the true function.
+            funcs (list): List of available functions with their names.
+        """
+        super(VisualizationDense, self).__init__()
+        self.train_data_x = train_data_x
+        self.train_data_y = train_data_y
+        self.val_data_x = val_data_x
+        self.val_data_y = val_data_y
+        self.func_name = func_name
+        self.funcs = funcs
+        self.losses = []
+        self.val_losses = []
+
+    def on_epoch_end(self, epoch, logs=None):
+        """
+        Logs training and validation losses at the end of each epoch.
+        """
+        loss = logs.get('loss')
+        val_loss = logs.get('val_loss')
+        if loss is not None:
+            self.losses.append(loss)
+        if val_loss is not None:
+            self.val_losses.append(val_loss)
+
+    def on_train_end(self, logs=None):
+        """
+        Generates plots for training and validation loss and predictions.
+        """
+        # Plot training and validation loss
+        plt.figure(figsize=(10, 6))
+        plt.plot(self.losses, label='Training Loss', color='blue')
+        plt.plot(self.val_losses, label='Validation Loss', color='red')
+        plt.title('Loss Function During Training')
+        plt.xlabel('Epochs')
+        plt.ylabel('Loss')
+        plt.legend()
+        plt.grid()
+
+        # Model predictions on training data
+        predictions = self.model.predict(self.train_data_x, verbose=0)
+
+        # Find the true function
+        true_func = None
+        for func, name in self.funcs:
+            if name == self.func_name:
+                true_func = func
+                break
+
+        if true_func is not None:
+            x_values = self.train_data_x.flatten()
+            true_solution = true_func(x_values)
+
+            # Plot predictions vs true function
+            plt.figure(figsize=(10, 6))
+            plt.scatter(x_values, self.train_data_y, label="Training Data", color="blue", alpha=0.5)
+            plt.plot(x_values, predictions, label="Model Prediction", color="red")
+            plt.plot(x_values, true_solution, label="True Function: " + self.func_name, color="green")
+            plt.title("DenseNet Model: Training Data, Predictions, and True Function")
+            plt.xlabel("x")
+            plt.ylabel("y")
+            plt.legend()
+            plt.grid()
+        else:
+            print("True function not found in the provided function list.")
+        plt.show()

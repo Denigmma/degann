@@ -8,7 +8,7 @@ from degann.networks.imodel import IModel
 from experiments.gen_dataset import funcs
 
 # import callbacks Classes
-from degann.networks.callbacks import MeasureTrainTime, Loss_tracking, Early_stopping, Save_best_model, Visualization
+from degann.networks.callbacks import MeasureTrainTime, LossTracking, EarlyStopping, SaveBestModel, VisualizationTS
 
 base_dir = os.path.dirname(__file__)
 name_dataset = "hardsin_1000"
@@ -41,7 +41,7 @@ val_data_x, val_data_y = create_sequences(val_data_x, val_data_y, time_steps)
 count_size = 5  # count layers
 gru_units = 30  # count units in layers
 shape = [gru_units] * count_size
-epochs = 200
+epochs = 20
 
 GRU_IModel = IModel(
     input_size=1,
@@ -60,10 +60,10 @@ loss_before_train = GRU_IModel.evaluate(train_data_x, train_data_y, verbose=0)
 val_loss_before_train = GRU_IModel.evaluate(val_data_x, val_data_y, verbose=0)
 
 MeasureTrainTime = MeasureTrainTime()
-Loss_tracking = Loss_tracking()
-Early_stopping = Early_stopping(patience=100) #customize "patience" to your needs
-Save_best_model = Save_best_model(GRU_IModel)
-Visualization = Visualization(train_data_x, train_data_y, val_data_x, val_data_y, name_dataset.split('_')[0], funcs)
+Loss_tracking = LossTracking()
+Early_stopping = EarlyStopping(patience=100) #customize "patience" to your needs
+Save_best_model = SaveBestModel(GRU_IModel)
+Visualization = VisualizationTS(train_data_x, train_data_y, val_data_x, val_data_y, name_dataset.split('_')[0], funcs)
 
 
 GRU_IModel.train(train_data_x, train_data_y, validation_data=(val_data_x, val_data_y), epochs=epochs, verbose=0,
