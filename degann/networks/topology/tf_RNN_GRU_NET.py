@@ -15,9 +15,9 @@ tf.random.set_seed(seed)
 class TensorflowGRUNet(tf.keras.Model):
     def __init__(
             self,
-            input_size: int = 2,
+            input_size: int = 1,
             block_size: List[int] = None,
-            output_size: int = 10,
+            output_size: int = 1,
             activation_func: str = "tanh",  # activation function in the GRU of a new layer
             recurrent_activation: str = "sigmoid",  # recurrent state activation function
             # dropout_rate: float = 0.2,  # level dropout
@@ -43,7 +43,6 @@ class TensorflowGRUNet(tf.keras.Model):
         self.activation_func = activation_func
         self.recurrent_activation = recurrent_activation
         # self.dropout_rate = dropout_rate
-
         self.gru_layers = []  # list GRU layers
 
         for i in range(len(block_size)):
@@ -87,9 +86,8 @@ class TensorflowGRUNet(tf.keras.Model):
     def custom_compile(
             self,
             rate=1e-2,
-            # optimizer="Adam",
-            optimizer="SGD",
-            loss_func="MeanSquaredError",
+            optimizer=None,
+            loss_func=None,
             metric_funcs=None,
             run_eagerly=False,
     ):

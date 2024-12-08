@@ -135,7 +135,10 @@ def ST_S_ODE_3_table(points_array: list, interval: Tuple[float, float] = (0, 40)
     return res
 
 def hardsin(x):
-    return np.sin(np.log(x**sin(x)))
+    return np.sin(np.log(x**np.sin(10*x)))
+
+def expexp(x):
+    return (np.e)**(1-(np.e)**(-x))
 
 
 exp = LF_ODE_1_solution
@@ -148,3 +151,4 @@ const = LF_ODE_2_solution
 sig = lambda x: 1 / (1 + np.float_power(np.e, -x))
 multidim = lambda x, y, z: np.sin(5 * x) * np.log2(1 + y) / np.sqrt(1 + z)
 hardsin = hardsin
+expexp = expexp

@@ -19,6 +19,7 @@ funcs = [
     # (functions.sig, "sig"),
     # (functions.multidim, "multidim")
     (functions.hardsin,"hardsin"),
+    # (functions.expexp, "expexp"),
 ]
 # sizes_of_samples = [50, 150, 400]
 # sizes_of_samples = [400]
@@ -39,9 +40,14 @@ if __name__ == "__main__":
         #     ]
         # )  # X data
 
-        nn_data_x = np.array(
-            [[i / generate_size] for i in range(1, generate_size + 2)]
-        )  # X data
+        # nn_data_x = np.array(
+        #     [[i / generate_size] for i in range(1, generate_size + 2)]
+        # )  # X data
+
+        start = 0
+        end = 1
+        nn_data_x = np.array([[start + i * (end - start) / generate_size] for i in range(generate_size + 1)])
+
 
         nn_data_y = np.array([[func(*x)] for x in nn_data_x])
 

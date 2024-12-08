@@ -41,7 +41,7 @@ val_data_x, val_data_y = create_sequences(val_data_x, val_data_y, time_steps)
 count_size = 5  # count layers
 gru_units = 30  # count units in layers
 shape = [gru_units] * count_size
-epochs = 20
+epochs = 50
 
 GRU_IModel = IModel(
     input_size=1,
@@ -52,7 +52,7 @@ GRU_IModel = IModel(
 
 GRU_IModel.compile(
     optimizer="Adam",
-    loss_func="RootMeanSquaredError",
+    loss_func="MeanSquaredError",
     metrics=[]
 )
 
@@ -66,7 +66,7 @@ Save_best_model = SaveBestModel(GRU_IModel)
 Visualization = VisualizationTS(train_data_x, train_data_y, val_data_x, val_data_y, name_dataset.split('_')[0], funcs)
 
 
-GRU_IModel.train(train_data_x, train_data_y, validation_data=(val_data_x, val_data_y), epochs=epochs, verbose=0,
+history = GRU_IModel.train(train_data_x, train_data_y, validation_data=(val_data_x, val_data_y), epochs=epochs, verbose=0,
                  callbacks=[MeasureTrainTime, Loss_tracking, Early_stopping, Save_best_model, Visualization])
 GRU_IModel.export_to_file("GRU_IModel_full")
 
@@ -97,3 +97,12 @@ print(f"different between Losses ={loss_before_train - loss_after_train:.6f}")
 print(f"validation loss before training = {val_loss_before_train:.6f}")
 print(f"validation loss after training = {val_loss_after_train:.6f}")
 print(f"Difference in validation loss = {(val_loss_before_train - val_loss_after_train):.6f}")
+
+
+#### Example of use history
+train_loss = history.history['loss']
+val_loss = history.history['val_loss']
+
+for i in range(len(train_loss)):
+    print(f"Epoch {i + 1}: finished in: {epoch_duration[i]:.2f} seconds | "
+          f"Training Loss: {train_loss[i]:.4f}, Validation Loss: {val_loss[i]:.4f}")
