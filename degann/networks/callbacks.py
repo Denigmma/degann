@@ -6,7 +6,6 @@ from keras.callbacks import Callback
 from keras.callbacks import History
 
 import matplotlib.pyplot as plt
-import numpy as np
 
 
 class MemoryCleaner(Callback):
@@ -101,32 +100,6 @@ class LightHistory(History):
         # Set the history attribute on the model after the epoch ends. This will
         # make sure that the state which is set is the latest one.
         self.model.history = self
-
-
-class LossTracking(Callback):
-    """
-    Callback for tracking losses during training.
-
-    This callback collects the training loss and validation loss at the end of each epoch.
-    It appends the loss values to separate lists for further analysis or visualization.
-
-    Attributes:
-        losses (list): Stores the training loss for each epoch.
-        val_losses (list): Stores the validation loss for each epoch.
-    """
-
-    def __init__(self):
-        super(LossTracking, self).__init__()
-        self.losses = []
-        self.val_losses = []
-
-    def on_epoch_end(self, epoch, logs=None):
-        loss = logs.get('loss')
-        val_loss = logs.get('val_loss')
-        if loss is not None:
-            self.losses.append(loss)
-        if val_loss is not None:
-            self.val_losses.append(val_loss)
 
 
 class EarlyStopping(Callback):
@@ -234,6 +207,7 @@ class VisualizationTS(Callback):
         self.funcs = funcs
         self.losses = []
         self.val_losses = []
+        self.saved_history = None
 
     def on_epoch_end(self, epoch, logs=None):
         loss = logs.get('loss')
@@ -253,6 +227,7 @@ class VisualizationTS(Callback):
         plt.legend()
         plt.grid()
 
+        self.saved_history = self.model.history
         predictions = self.model.predict(self.train_data_x, verbose=0)
 
         true_func = None
@@ -264,6 +239,9 @@ class VisualizationTS(Callback):
         x_values = self.train_data_x[:, -1, 0]
         true_solution = true_func(x_values)
 
+        save_dir = "../../experiments/approximation_graphs/gru/"
+        plt.savefig(save_dir+f"{self.func_name}_{len(self.losses)}eph_gru_loss_plot.png")
+
         plt.figure(figsize=(10, 6))
         plt.scatter(x_values, self.train_data_y, label="Training Data", color="blue", alpha=0.5)
         plt.plot(x_values, predictions, label="Model Prediction", color="red")
@@ -274,8 +252,13 @@ class VisualizationTS(Callback):
         plt.legend()
         plt.grid()
 
-        plt.show()
+        plt.savefig(save_dir+f"{self.func_name}_{len(self.losses)}eph_gru_apr_plot.png")
+
+        # plt.show()
         plt.close()
+
+    def get_saved_history(self):
+        return self.saved_history
 
 class VisualizationDense(Callback):
     """
@@ -317,6 +300,7 @@ class VisualizationDense(Callback):
         self.funcs = funcs
         self.losses = []
         self.val_losses = []
+        self.saved_history = None
 
     def on_epoch_end(self, epoch, logs=None):
         """
@@ -343,7 +327,7 @@ class VisualizationDense(Callback):
         plt.legend()
         plt.grid()
 
-        # Model predictions on training data
+        self.saved_history = self.model.history
         predictions = self.model.predict(self.train_data_x, verbose=0)
 
         # Find the true function
@@ -352,6 +336,9 @@ class VisualizationDense(Callback):
             if name == self.func_name:
                 true_func = func
                 break
+
+        save_dir = "../experiments/approximation_graphs/dense/"
+        plt.savefig(save_dir+f"{self.func_name}_{len(self.losses)}eph_dense_loss_plot.png")
 
         if true_func is not None:
             x_values = self.train_data_x.flatten()
@@ -367,6 +354,13 @@ class VisualizationDense(Callback):
             plt.ylabel("y")
             plt.legend()
             plt.grid()
+
+            plt.savefig(save_dir + f"{self.func_name}_{len(self.losses)}eph_dense_apr_plot.png")
         else:
             print("True function not found in the provided function list.")
-        plt.show()
+        # plt.show()
+        plt.close()
+
+    def get_saved_history(self):
+        return self.saved_history
+

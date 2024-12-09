@@ -45,7 +45,7 @@ if __name__ == "__main__":
         # )  # X data
 
         start = 0
-        end = 1
+        end = 2
         nn_data_x = np.array([[start + i * (end - start) / generate_size] for i in range(generate_size + 1)])
 
 
