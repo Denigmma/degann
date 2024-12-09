@@ -1,0 +1,18 @@
+Epoch 1: finished in: 4.83 seconds | Training Loss: 0.2275, Validation Loss: 0.1873
+Epoch 2: finished in: 0.13 seconds | Training Loss: 0.1940, Validation Loss: 0.1895
+Epoch 3: finished in: 0.13 seconds | Training Loss: 0.1843, Validation Loss: 0.1767
+Epoch 4: finished in: 0.12 seconds | Training Loss: 0.1639, Validation Loss: 0.1380
+Epoch 5: finished in: 0.12 seconds | Training Loss: 0.1089, Validation Loss: 0.0858
+Epoch 6: finished in: 0.12 seconds | Training Loss: 0.0679, Validation Loss: 0.0589
+Epoch 7: finished in: 0.12 seconds | Training Loss: 0.0588, Validation Loss: 0.0557
+Epoch 8: finished in: 0.12 seconds | Training Loss: 0.0577, Validation Loss: 0.0538
+Epoch 9: finished in: 0.13 seconds | Training Loss: 0.0576, Validation Loss: 0.0526
+Epoch 10: finished in: 0.13 seconds | Training Loss: 0.0564, Validation Loss: 0.0511
+Total training time: 5.9510 seconds
+Average time per epoch: 0.595095 seconds
+Loss before training = 0.243034
+Loss after training = 0.053495
+difference between Losses = 0.189539
+validation loss before training = 0.251011
+validation loss after training = 0.051090
+Difference in validation loss = 0.199921
