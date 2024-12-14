@@ -1,0 +1,13 @@
+Epoch 1: finished in: 4.77 seconds | Training Loss: 0.2100, Validation Loss: 0.1520
+Epoch 2: finished in: 0.84 seconds | Training Loss: 0.1554, Validation Loss: 0.1523
+Epoch 3: finished in: 0.81 seconds | Training Loss: 0.1513, Validation Loss: 0.1489
+Epoch 4: finished in: 0.82 seconds | Training Loss: 0.1505, Validation Loss: 0.1489
+Epoch 5: finished in: 0.81 seconds | Training Loss: 0.1496, Validation Loss: 0.1474
+Total training time: 8.0565 seconds
+Average time per epoch: 1.611293 seconds
+Loss before training = 0.314132
+Loss after training = 0.149282
+difference between Losses = 0.164851
+validation loss before training = 0.314060
+validation loss after training = 0.147387
+Difference in validation loss = 0.166672
